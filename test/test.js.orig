@@ -859,6 +859,65 @@ describe('url-parse', function () {
       assume(data.protocol).equals('file:');
       assume(data.origin).equals('null');
     });
+
+    it('adds @ to href if auth and host are empty', function () {
+      var parsed, i = 0;
+      var urls = [
+        'http:@/127.0.0.1',
+        'http::@/127.0.0.1',
+        'http:/@/127.0.0.1',
+        'http:/:@/127.0.0.1',
+        'http://@/127.0.0.1',
+        'http://:@/127.0.0.1',
+        'http:///@/127.0.0.1',
+        'http:///:@/127.0.0.1'
+      ];
+
+      for (; i < urls.length; i++) {
+        parsed = parse(urls[i]);
+
+        assume(parsed.protocol).equals('http:');
+        assume(parsed.auth).equals('');
+        assume(parsed.username).equals('');
+        assume(parsed.password).equals('');
+        assume(parsed.host).equals('');
+        assume(parsed.hostname).equals('');
+        assume(parsed.pathname).equals('/127.0.0.1');
+        assume(parsed.origin).equals('null');
+        assume(parsed.href).equals('http://@/127.0.0.1');
+        assume(parsed.toString()).equals('http://@/127.0.0.1');
+      }
+
+      urls = [
+        'http:@/',
+        'http:@',
+        'http::@/',
+        'http::@',
+        'http:/@/',
+        'http:/@',
+        'http:/:@/',
+        'http:/:@',
+        'http://@/',
+        'http://@',
+        'http://:@/',
+        'http://:@'
+      ];
+
+      for (i = 0; i < urls.length; i++) {
+        parsed = parse(urls[i]);
+
+        assume(parsed.protocol).equals('http:');
+        assume(parsed.auth).equals('');
+        assume(parsed.username).equals('');
+        assume(parsed.password).equals('');
+        assume(parsed.host).equals('');
+        assume(parsed.hostname).equals('');
+        assume(parsed.pathname).equals('/');
+        assume(parsed.origin).equals('null');
+        assume(parsed.href).equals('http:///');
+        assume(parsed.toString()).equals('http:///');
+      }
+    });
   });
 
   describe('fuzzy', function () {
