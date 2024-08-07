@@ -47,8 +47,14 @@ describe('url-parse', function () {
       assume(parse.trimLeft).is.a('function');
     });
 
-    it('removes whitespace on the left', function () {
-      assume(parse.trimLeft('  lol')).equals('lol');
+    it('removes control characters on the left', function () {
+      var i = 0;
+      var prefix = ''
+
+      for (; i < 33; i++) {
+        prefix = String.fromCharCode(i);
+        assume(parse.trimLeft(prefix + prefix +'lol')).equals('lol');
+      }
     });
 
     it('calls toString on a given value', function () {
@@ -442,6 +448,28 @@ describe('url-parse', function () {
     assume(parsed.href).equals('sip:alice@atlanta.com');
   });
 
+  it('handles the case where the port is specified but empty', function () {
+    var parsed = parse('http://example.com:');
+
+    assume(parsed.protocol).equals('http:');
+    assume(parsed.port).equals('');
+    assume(parsed.host).equals('example.com');
+    assume(parsed.hostname).equals('example.com');
+    assume(parsed.pathname).equals('/');
+    assume(parsed.origin).equals('http://example.com');
+    assume(parsed.href).equals('http://example.com/');
+
+    parsed = parse('http://example.com::');
+
+    assume(parsed.protocol).equals('http:');
+    assume(parsed.port).equals('');
+    assume(parsed.host).equals('example.com:');
+    assume(parsed.hostname).equals('example.com:');
+    assume(parsed.pathname).equals('/');
+    assume(parsed.origin).equals('http://example.com:');
+    assume(parsed.href).equals('http://example.com::/');
+  });
+
   describe('origin', function () {
     it('generates an origin property', function () {
       var url = 'http://google.com:80/pathname'
@@ -770,6 +798,65 @@ describe('url-parse', function () {
       assume(parsed.hostname).equals('www.example.com');
       assume(parsed.pathname).equals('/');
       assume(parsed.href).equals('http://user%40:pas%3As%40@www.example.com/');
+    });
+
+    it('adds @ to href if auth and host are empty', function () {
+      var parsed, i = 0;
+      var urls = [
+        'http:@/127.0.0.1',
+        'http::@/127.0.0.1',
+        'http:/@/127.0.0.1',
+        'http:/:@/127.0.0.1',
+        'http://@/127.0.0.1',
+        'http://:@/127.0.0.1',
+        'http:///@/127.0.0.1',
+        'http:///:@/127.0.0.1'
+      ];
+
+      for (; i < urls.length; i++) {
+        parsed = parse(urls[i]);
+
+        assume(parsed.protocol).equals('http:');
+        assume(parsed.auth).equals('');
+        assume(parsed.username).equals('');
+        assume(parsed.password).equals('');
+        assume(parsed.host).equals('');
+        assume(parsed.hostname).equals('');
+        assume(parsed.pathname).equals('/127.0.0.1');
+        assume(parsed.origin).equals('null');
+        assume(parsed.href).equals('http://@/127.0.0.1');
+        assume(parsed.toString()).equals('http://@/127.0.0.1');
+      }
+
+      urls = [
+        'http:@/',
+        'http:@',
+        'http::@/',
+        'http::@',
+        'http:/@/',
+        'http:/@',
+        'http:/:@/',
+        'http:/:@',
+        'http://@/',
+        'http://@',
+        'http://:@/',
+        'http://:@'
+      ];
+
+      for (i = 0; i < urls.length; i++) {
+        parsed = parse(urls[i]);
+
+        assume(parsed.protocol).equals('http:');
+        assume(parsed.auth).equals('');
+        assume(parsed.username).equals('');
+        assume(parsed.password).equals('');
+        assume(parsed.host).equals('');
+        assume(parsed.hostname).equals('');
+        assume(parsed.pathname).equals('/');
+        assume(parsed.origin).equals('null');
+        assume(parsed.href).equals('http:///');
+        assume(parsed.toString()).equals('http:///');
+      }
     });
   });
 
